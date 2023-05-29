@@ -1,37 +1,41 @@
-import { Instrument, OrderSide, OrderStatus } from '../Enums'
-import { Envelope, Message, Quote } from './Base'
-import Decimal from 'decimal.js'
+import { Instrument, OrderStatus, ServerMessageType } from '../Enums'
+import { Order, Quote } from './Base'
 
-export interface ServerEnvelope extends Envelope {
-  messageType: ServerMessage
+export type ServerEnvelope<T extends ServerMessageType = ServerMessageType> = {
+  messageType: T
+  message: ServerMessage<T>
 }
 
-export interface ServerMessage extends Message {}
+export type ServerMessage<T extends ServerMessageType = ServerMessageType> =
+  T extends ServerMessageType.success
+    ? SuccessInfo
+    : T extends ServerMessageType.marketDataUpdate
+    ? MarketDataUpdate
+    : T extends ServerMessageType.executionReport
+    ? ExecutionReport
+    : T extends ServerMessageType.error
+    ? ErrorInfo
+    : T extends ServerMessageType.ordersUpdate
+    ? Orders
+    : never
 
-export interface ErrorInfo extends ServerMessage {
+export interface ErrorInfo {
   reason: string
 }
 
-export interface SuccessInfo extends ServerMessage {}
-
-export interface ExecutionReport extends ServerMessage {
+export interface ExecutionReport {
   orderId: string
   orderStatus: OrderStatus
 }
 
-export interface MarketDataUpdate extends ServerMessage {
+export interface MarketDataUpdate {
   subscriptionId: string
   instrument: Instrument
   quotes: [Quote]
 }
 
-export interface SubscribeMarketDataSuccess extends ServerEnvelope {
-  message: { subscriptionId: string }
+export interface SuccessInfo {
+  subscriptionId: string
 }
 
-export interface PlaceOrderRequest {
-  instrument: Instrument
-  amount: Decimal
-  side: OrderSide
-  price: Decimal
-}
+export type Orders = Order[]

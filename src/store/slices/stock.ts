@@ -1,11 +1,13 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { StockMarketInitialState } from '../types'
 import { client, waitForSubscribeResponse } from '../helpers'
-import { PlaceOrderRequest } from '../../Models/ServerMessages'
+import { MarketDataUpdate, Orders } from '../../Models/ServerMessages'
+import { Instrument } from '../../Enums'
+import { PlaceOrder } from '../../Models/ClientMessages'
 
 const initialState: StockMarketInitialState = {
-  subscribedMarkets: [],
-  currentMarket: null,
+  orders: [],
+  currentMarket: {},
 }
 
 export const subscribeMarketData = createAsyncThunk(
@@ -28,7 +30,7 @@ export const unsubscribeMarketData = createAsyncThunk(
 
 export const placeOrder = createAsyncThunk(
   'stockMarket/placeOrder',
-  async (orderData: PlaceOrderRequest) => {
+  async (orderData: PlaceOrder) => {
     client.placeOrder(
       orderData.instrument,
       orderData.side,
@@ -43,20 +45,49 @@ export const placeOrder = createAsyncThunk(
 const stockMarketSlice = createSlice({
   name: 'stockMarket',
   initialState: initialState,
-  reducers: {},
+  reducers: {
+    changeInstrument(state, action: PayloadAction<Instrument>) {
+      state.currentMarket = {}
+      state.currentMarket.instrument = action.payload
+
+      return state
+    },
+    marketDataUpdate(state, action: PayloadAction<MarketDataUpdate>) {
+      const { subscriptionId, instrument, quotes } = action.payload
+      // TODO: Give user ability to choose from different exchanges
+      const { bid, offer, minAmount, maxAmount } = quotes[0]
+
+      state.currentMarket = {
+        id: subscriptionId,
+        instrument,
+        buyPrice: offer,
+        sellPrice: bid,
+        minAmount,
+        maxAmount,
+      }
+
+      return state
+    },
+    updateOrders(state, action: PayloadAction<Orders>) {
+      state.orders = action.payload
+
+      return state
+    }
+  },
   extraReducers: builder => {
     builder
       .addCase(subscribeMarketData.fulfilled, (state, action) => {
-        state.subscribedMarkets.push({ id: action.payload })
+        state.currentMarket = { id: action.payload.subscriptionId }
       })
-      .addCase(unsubscribeMarketData.fulfilled, (state, action) => {
-        state.subscribedMarkets.filter(
-          marketItem => marketItem.id !== action.payload,
-        )
+      .addCase(unsubscribeMarketData.fulfilled, (state) => {
+        state.currentMarket = {}
       })
+      .addCase(placeOrder.fulfilled, () => {})
   },
 })
 
-const { reducer } = stockMarketSlice
+const { reducer, actions } = stockMarketSlice
+
+export const { changeInstrument, marketDataUpdate, updateOrders } = actions
 
 export default reducer

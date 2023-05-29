@@ -1,12 +1,48 @@
 import { Action, configureStore, ThunkAction } from '@reduxjs/toolkit'
-import stockMarketReducer from './slices/stock'
-import { client, connect } from './helpers'
+import stockMarketReducer, {
+  marketDataUpdate,
+  updateOrders,
+} from './slices/stock'
+import { client, connect } from './helpers';
+import { ServerEnvelope } from '../Models/ServerMessages';
+import { ServerMessageType } from '../Enums';
 
 const connectWSMiddleware =
-  () => (next: any) => async (action: any) => {
-    if (client.connection?.readyState === 1) return
-    await connect()
-    return next(action)
+  (store: any) => {
+  return (next: any) => async (action: any) => {
+      if (client.connection?.readyState !== 1) {
+        await connect()
+
+        if (!client.connection) throw Error('Attempt to connect socket failed')
+
+        client.connection.onmessage = (event: MessageEvent) => {
+          try {
+            const message: ServerEnvelope = JSON.parse(event.data)
+            let messageData
+
+            console.log(message)
+            switch (message.messageType) {
+              case ServerMessageType.marketDataUpdate:
+                messageData = (
+                  message as ServerEnvelope<ServerMessageType.marketDataUpdate>
+                ).message
+                store.dispatch(marketDataUpdate(messageData))
+                break
+              case ServerMessageType.ordersUpdate:
+                messageData = (
+                  message as ServerEnvelope<ServerMessageType.ordersUpdate>
+                ).message
+                store.dispatch(updateOrders(messageData))
+                break
+            }
+          } catch (err) {
+            console.error(err)
+          }
+
+        }
+      }
+      next(action)
+    }
   }
 
 export const store = configureStore({
@@ -14,7 +50,7 @@ export const store = configureStore({
     stockMarketSlice: stockMarketReducer,
   },
   middleware: getDefaultMiddleware =>
-    getDefaultMiddleware().concat(connectWSMiddleware),
+    getDefaultMiddleware().concat(connectWSMiddleware)
 })
 
 export type RootState = ReturnType<typeof store.getState>

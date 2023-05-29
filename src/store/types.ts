@@ -1,22 +1,16 @@
-import { Instrument, OrderSide, OrderStatus } from '../Enums'
-
-export type MarketItem = {
-  id: string
-  creationTime?: Date
-  changeTime?: Date
-  status?: OrderStatus
-  side?: OrderSide
-  price?: number
-  amount?: number
-  instrument?: Instrument
-}
+import { Instrument } from '../Enums'
+import Decimal from 'decimal.js';
+import { Order } from '../Models/Base';
 
 export type StockMarketInitialState = {
-  subscribedMarkets: MarketItem[]
+  orders: Order[]
   currentMarket: {
-    instrument: string
-    amount: number
-    buyPrice: number
-    sellPrice: number
-  } | null
+    id?: string
+    instrument?: Instrument
+    amount?: Decimal
+    buyPrice?: Decimal
+    sellPrice?: Decimal
+    minAmount?: Decimal
+    maxAmount?: Decimal
+  }
 }

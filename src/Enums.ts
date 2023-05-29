@@ -1,7 +1,7 @@
 export enum ClientMessageType {
   subscribeMarketData = 1,
   unsubscribeMarketData,
-  placeOrder,
+  placeOrder
 }
 
 export enum ServerMessageType {
@@ -9,6 +9,7 @@ export enum ServerMessageType {
   error,
   executionReport,
   marketDataUpdate,
+  ordersUpdate
 }
 
 export enum OrderSide {

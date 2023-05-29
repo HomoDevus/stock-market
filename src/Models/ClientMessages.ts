@@ -1,22 +1,29 @@
-import { Envelope, Message } from './Base'
 import { ClientMessageType, Instrument, OrderSide } from '../Enums'
 import Decimal from 'decimal.js'
 
-export interface ClientEnvelope extends Envelope {
-  messageType: ClientMessageType
+export type ClientEnvelope<T extends ClientMessageType = ClientMessageType> = {
+  messageType: T
+  message: ClientMessage<T>
 }
 
-export interface ClientMessage extends Message {}
+export type ClientMessage<T extends ClientMessageType = ClientMessageType> =
+  T extends ClientMessageType.placeOrder
+    ? PlaceOrder
+    : T extends ClientMessageType.subscribeMarketData
+    ? SubscribeMarketData
+    : T extends ClientMessageType.unsubscribeMarketData
+    ? UnsubscribeMarketData
+    : never
 
-export interface SubscribeMarketData extends ClientMessage {
+export interface SubscribeMarketData {
   instrument: Instrument
 }
 
-export interface UnsubscribeMarketData extends ClientMessage {
+export interface UnsubscribeMarketData {
   subscriptionId: string
 }
 
-export interface PlaceOrder extends ClientMessage {
+export interface PlaceOrder {
   instrument: Instrument
   side: OrderSide
   amount: Decimal

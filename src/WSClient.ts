@@ -1,14 +1,11 @@
-import { ClientMessage } from './Models/ClientMessages'
+import { ClientEnvelope } from './Models/ClientMessages'
 import {
   ClientMessageType,
   Instrument,
   OrderSide,
-  ServerMessageType,
 } from './Enums'
 import Decimal from 'decimal.js'
-import { ServerEnvelope } from './Models/ServerMessages'
-
-const fakeURL = 'ws://echo.websocket.events/'
+import { fakeURL } from './WSServer'
 
 export default class WSConnector {
   connection: WebSocket | undefined
@@ -31,30 +28,44 @@ export default class WSConnector {
       onConnected()
     }
 
-    this.connection.onmessage = event => {
-      try {
-        const message: ServerEnvelope = JSON.parse(event.data)
-        switch (message.messageType) {
-          case ServerMessageType.success:
-            break
-          case ServerMessageType.error:
-            break
-          case ServerMessageType.executionReport:
-            break
-          case ServerMessageType.marketDataUpdate:
-            break
-        }
-      } catch (err) {
-        console.error(err)
-      }
-    }
+    // this.connection.onmessage = event => {
+    //   try {
+    //     const message: ServerEnvelope = JSON.parse(event.data)
+    //     let messageData
+    //
+    //     switch (message.messageType) {
+    //       case ServerMessageType.marketDataUpdate:
+    //         messageData = (
+    //           message as ServerEnvelope<ServerMessageType.marketDataUpdate>
+    //         ).message
+    //         store.dispatch(marketDataUpdate(messageData))
+    //         break
+    //       case ServerMessageType.ordersUpdate:
+    //         messageData = (
+    //           message as ServerEnvelope<ServerMessageType.ordersUpdate>
+    //         ).message
+    //         store.dispatch(updateOrders(messageData))
+    //         break
+    //       // case ServerMessageType.success:
+    //       //   break
+    //       // case ServerMessageType.error:
+    //       //   break
+    //       // case ServerMessageType.executionReport:
+    //       //   break
+    //       // case ServerMessageType.marketDataUpdate:
+    //       //   break
+    //     }
+    //   } catch (err) {
+    //     console.error(err)
+    //   }
+    // }
   }
 
   disconnect = () => {
     this.connection?.close()
   }
 
-  send = (message: ClientMessage) => {
+  send = (message: ClientEnvelope) => {
     this.connection?.send(JSON.stringify(message))
   }
 
